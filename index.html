@@ -9,12 +9,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* 全域設定：冷靜、精確 */
+        /* 全域設定 */
         :root {
-            --primary: #6B46C1; /* 皇家紫 */
-            --primary-light: #F3E8FF;
-            --primary-dark: #553C9A;
-            --secondary: #319795; /* 沉穩青 */
+            --primary: #6B46C1;
+            --secondary: #319795;
+            --warning: #D69E2E; /* 例外管理色 */
             --bg-gray: #F7FAFC;
             --border-color: #E2E8F0;
         }
@@ -26,97 +25,64 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 數字字體：等寬，確保對齊 */
-        .font-num { 
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; 
-            letter-spacing: -0.5px;
-        }
+        .font-num { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; letter-spacing: -0.5px; }
 
-        /* 表格樣式 (Excel Like) */
-        .excel-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95rem;
-        }
-        .excel-table th {
-            background-color: var(--primary);
-            color: white;
-            padding: 12px 8px;
-            text-align: left;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .excel-table td {
-            padding: 12px 8px;
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
-        }
-        .excel-table tr:nth-child(even) {
-            background-color: #fff;
-        }
-        .excel-table tr:nth-child(odd) {
-            background-color: #FAFAFA;
-        }
-        /* 特殊款項高亮 */
-        .special-row {
-            background-color: #FEFCBF !important; /* 淺黃色提醒 */
-            border-left: 4px solid #D69E2E;
-        }
+        /* 表格樣式 */
+        .excel-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        .excel-table th { background-color: var(--primary); color: white; padding: 12px 8px; text-align: left; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+        .excel-table td { padding: 12px 8px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .excel-table tr:nth-child(even) { background-color: #fff; }
+        .excel-table tr:nth-child(odd) { background-color: #FAFAFA; }
+
+        /* 例外管理表格 */
+        .exception-table th { background-color: var(--warning); color: #FFF; }
+        .exception-row { background-color: #FEFCBF !important; border-left: 4px solid var(--warning); }
 
         /* 膠囊標籤 */
-        .pill {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            margin-right: 4px;
-        }
+        .pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; margin-right: 4px; }
         .pill-sm { background-color: #EBF8FF; color: #2B6CB0; border: 1px solid #BEE3F8; }
         .pill-lg { background-color: #FFFAF0; color: #C05621; border: 1px solid #FEEBC8; }
+        .pill-ex { background-color: #FEFCBF; color: #975A16; border: 1px solid #F6E05E; }
 
-        /* 狀態文字 */
         .text-pos { color: var(--secondary); font-weight: bold; }
         .text-neg { color: #E53E3E; font-weight: bold; }
 
-        /* 底部按鈕區 */
-        .action-bar {
-            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
-        }
+        .action-bar { box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); }
     </style>
 </head>
 <body class="h-screen flex flex-col">
 
 <div id="app" class="flex flex-col h-full max-w-2xl mx-auto w-full bg-white shadow-2xl">
 
-    <header class="bg-purple-700 text-white p-5 shrink-0 shadow-md z-20">
+    <header class="bg-purple-700 text-white p-5 shrink-0 shadow-md z-20 transition-colors duration-300" :class="{'bg-amber-600': viewMode === 'exception'}">
         <div class="flex justify-between items-start">
             <div>
                 <h1 class="text-xl font-bold opacity-90 flex items-center gap-2">
                     <i class="fa-solid fa-calculator"></i> 阿順與佳圓的帳本
                 </h1>
-                <p class="text-purple-200 text-sm mt-1">資料區間: {{ dateRangeStr }}</p>
+                <p class="text-white/70 text-sm mt-1">資料區間: {{ dateRangeStr }}</p>
             </div>
             <div class="text-right">
-                <div class="text-purple-200 text-xs uppercase tracking-wider">目前餘額</div>
+                <div class="text-white/70 text-xs uppercase tracking-wider">目前餘額</div>
                 <div class="text-4xl font-bold font-num mt-1">${{ formatNumber(currentBalance) }}</div>
             </div>
         </div>
 
-        <div class="flex mt-6 bg-purple-800/50 p-1 rounded-lg">
+        <div class="flex mt-6 bg-black/20 p-1 rounded-lg">
             <button @click="viewMode = 'ledger'" 
                 class="flex-1 py-2 rounded-md text-sm font-bold transition-all duration-200"
-                :class="viewMode === 'ledger' ? 'bg-white text-purple-700 shadow' : 'text-purple-200 hover:bg-purple-700'">
-                <i class="fa-solid fa-table-list mr-1"></i> 流水帳 (Excel)
+                :class="viewMode === 'ledger' ? 'bg-white text-gray-800 shadow' : 'text-white/70 hover:bg-white/10'">
+                流水帳
             </button>
             <button @click="viewMode = 'report'" 
                 class="flex-1 py-2 rounded-md text-sm font-bold transition-all duration-200"
-                :class="viewMode === 'report' ? 'bg-white text-purple-700 shadow' : 'text-purple-200 hover:bg-purple-700'">
-                <i class="fa-solid fa-chart-pie mr-1"></i> 月報表
+                :class="viewMode === 'report' ? 'bg-white text-gray-800 shadow' : 'text-white/70 hover:bg-white/10'">
+                月報表
+            </button>
+            <button @click="viewMode = 'exception'" 
+                class="flex-1 py-2 rounded-md text-sm font-bold transition-all duration-200"
+                :class="viewMode === 'exception' ? 'bg-white text-amber-700 shadow' : 'text-white/70 hover:bg-white/10'">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i>例外管理
             </button>
         </div>
     </header>
@@ -129,7 +95,7 @@
                     <i class="fa-solid fa-file-import"></i>
                 </div>
                 <h3 class="text-lg font-bold text-gray-800 mb-2">準備就緒</h3>
-                <p class="text-gray-500 text-sm mb-6">已整理好截至 1/4 的所有歷史帳務，點擊下方按鈕即可載入。</p>
+                <p class="text-gray-500 text-sm mb-6">點擊載入歷史資料與校正設定。</p>
                 <button @click="importInitialData" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
                     載入歷史資料
                 </button>
@@ -147,7 +113,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="t in sortedTransactions" :key="t.id" :class="{'special-row': t.isSpecial}">
+                    <tr v-for="t in sortedTransactions" :key="t.id" :class="{'exception-row': t.type === 'exception'}">
                         <td class="pl-4 border-r border-gray-100">
                             <div class="font-bold text-gray-700">{{ formatDate(t.date) }}</div>
                             <div class="text-xs text-gray-400 font-num">{{ getWeekDay(t.date) }}</div>
@@ -157,21 +123,21 @@
                             <div v-if="t.type === 'deposit'" class="flex items-center text-secondary font-bold">
                                 <i class="fa-solid fa-arrow-down mr-1"></i> {{ t.note || '儲值/轉帳' }}
                             </div>
+                            <div v-else-if="t.type === 'exception'" class="text-amber-700 font-bold text-sm">
+                                <i class="fa-solid fa-triangle-exclamation mr-1"></i> {{ t.note }}
+                            </div>
                             <div v-else>
-                                <div v-if="t.isSpecial" class="font-bold text-amber-700 mb-1">
-                                    <i class="fa-solid fa-star mr-1"></i> {{ t.note }}
-                                </div>
-                                <div v-else class="flex flex-wrap gap-1">
+                                <div class="flex flex-wrap gap-1">
                                     <span v-if="t.small > 0" class="pill pill-sm">小{{ t.small }}</span>
                                     <span v-if="t.large > 0" class="pill pill-lg">大{{ t.large }}</span>
-                                    <span v-if="t.note && !t.isSpecial" class="text-xs text-gray-400 ml-1">({{t.note}})</span>
+                                    <span v-if="t.note" class="text-xs text-gray-400 ml-1">({{t.note}})</span>
                                 </div>
                             </div>
                         </td>
 
                         <td class="text-right font-num text-lg">
-                            <span :class="t.type === 'deposit' ? 'text-pos' : 'text-neg'">
-                                {{ t.type === 'deposit' ? '+' : '-' }}{{ t.amount }}
+                            <span :class="getAmountColor(t)">
+                                {{ getSign(t) }}{{ Math.abs(t.amount) }}
                             </span>
                         </td>
 
@@ -194,30 +160,73 @@
                 </div>
                 <div class="p-4 grid grid-cols-2 gap-4">
                     <div>
-                        <div class="text-xs text-gray-500 mb-1">小羊奶總數</div>
-                        <div class="text-xl font-bold font-num text-blue-600">{{ stat.totalSmall }} <span class="text-xs text-gray-400">瓶</span></div>
+                        <div class="text-xs text-gray-500 mb-1">小羊奶</div>
+                        <div class="text-xl font-bold font-num text-blue-600">{{ stat.totalSmall }}</div>
                     </div>
                     <div>
-                        <div class="text-xs text-gray-500 mb-1">大羊奶總數</div>
-                        <div class="text-xl font-bold font-num text-orange-600">{{ stat.totalLarge }} <span class="text-xs text-gray-400">瓶</span></div>
+                        <div class="text-xs text-gray-500 mb-1">大羊奶</div>
+                        <div class="text-xl font-bold font-num text-orange-600">{{ stat.totalLarge }}</div>
                     </div>
-                    <div class="col-span-2 border-t border-dashed border-gray-200 pt-3 flex justify-between">
-                        <div>
-                            <div class="text-xs text-gray-500">本月支出</div>
-                            <div class="text-red-500 font-bold font-num">${{ formatNumber(stat.expense) }}</div>
+                    <div class="col-span-2 pt-2 border-t border-dashed border-gray-100 mt-2">
+                        <div class="flex justify-between items-center text-sm mb-1">
+                            <span class="text-gray-500">消費支出</span>
+                            <span class="text-red-500 font-bold font-num">${{ formatNumber(stat.expense) }}</span>
                         </div>
-                        <div class="text-right">
-                            <div class="text-xs text-gray-500">本月儲值</div>
-                            <div class="text-teal-600 font-bold font-num">${{ formatNumber(stat.deposit) }}</div>
+                        <div class="flex justify-between items-center text-sm mb-1">
+                            <span class="text-gray-500">儲值入帳</span>
+                            <span class="text-teal-600 font-bold font-num">${{ formatNumber(stat.deposit) }}</span>
+                        </div>
+                        <div v-if="stat.adjustment !== 0" class="flex justify-between items-center text-sm bg-amber-50 p-1 rounded">
+                            <span class="text-amber-700 font-bold"><i class="fa-solid fa-wrench mr-1"></i>例外調整</span>
+                            <span class="text-amber-700 font-bold font-num">{{ stat.adjustment > 0 ? '+' : ''}}{{ formatNumber(stat.adjustment) }}</span>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="h-24"></div>
         </div>
+
+        <div v-if="viewMode === 'exception'" class="bg-gray-50 min-h-full">
+            <div class="p-4 bg-amber-50 border-b border-amber-200">
+                <h2 class="text-amber-800 font-bold text-lg mb-1">例外項目清單</h2>
+                <p class="text-amber-700 text-sm">這裡記錄了所有手動調整金額的項目，用於修正計算誤差或特殊款項。</p>
+            </div>
+            
+            <div v-if="exceptionTransactions.length > 0">
+                <table class="excel-table exception-table">
+                    <thead>
+                        <tr>
+                            <th class="w-1/4 pl-4">日期</th>
+                            <th class="w-2/5">調整原因</th>
+                            <th class="w-1/3 text-right pr-4">調整金額</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="t in exceptionTransactions" :key="t.id" class="bg-white">
+                            <td class="pl-4 font-bold text-gray-600">{{ formatDate(t.date) }}</td>
+                            <td class="text-gray-800 font-bold">{{ t.note }}</td>
+                            <td class="text-right pr-4 font-bold font-num" :class="t.amount >= 0 ? 'text-secondary' : 'text-neg'">
+                                {{ t.amount >= 0 ? '+' : '' }}{{ t.amount }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-else class="p-8 text-center text-gray-400">
+                <i class="fa-solid fa-check-circle text-4xl mb-2 text-green-100"></i>
+                <p>目前沒有例外項目，帳務完美！</p>
+            </div>
+            
+            <div class="p-4">
+                 <button @click="openModal('exception')" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow hover:bg-amber-600 active:scale-95 transition-transform">
+                    <i class="fa-solid fa-plus mr-1"></i> 新增一筆例外調整
+                </button>
+            </div>
+            <div class="h-24"></div>
+        </div>
     </main>
 
-    <div class="action-bar fixed bottom-0 w-full max-w-2xl p-4 z-30 pb-6 flex gap-3">
+    <div v-if="viewMode !== 'exception'" class="action-bar fixed bottom-0 w-full max-w-2xl p-4 z-30 pb-6 flex gap-3">
         <button @click="openModal('expense')" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
             <i class="fa-solid fa-truck"></i>
             <span class="font-bold text-lg">配送記帳</span>
@@ -230,12 +239,16 @@
 
     <div v-if="showModal" class="fixed inset-0 bg-gray-900/60 z-50 flex items-end sm:items-center justify-center backdrop-blur-sm p-4 sm:p-0">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
-            <div class="px-5 py-4 border-b flex justify-between items-center" :class="modalType === 'expense' ? 'bg-purple-50' : 'bg-teal-50'">
-                <h3 class="font-bold text-lg flex items-center gap-2" :class="modalType === 'expense' ? 'text-purple-800' : 'text-teal-800'">
-                    <i :class="modalType === 'expense' ? 'fa-solid fa-truck' : 'fa-solid fa-wallet'"></i>
-                    {{ modalType === 'expense' ? '新增配送紀錄' : '新增儲值/轉帳' }}
+            <div class="px-5 py-4 border-b flex justify-between items-center" 
+                :class="{'bg-purple-50': modalType==='expense', 'bg-teal-50': modalType==='deposit', 'bg-amber-50': modalType==='exception'}">
+                <h3 class="font-bold text-lg flex items-center gap-2" 
+                    :class="{'text-purple-800': modalType==='expense', 'text-teal-800': modalType==='deposit', 'text-amber-800': modalType==='exception'}">
+                    <i v-if="modalType==='expense'" class="fa-solid fa-truck"></i>
+                    <i v-if="modalType==='deposit'" class="fa-solid fa-wallet"></i>
+                    <i v-if="modalType==='exception'" class="fa-solid fa-wrench"></i>
+                    {{ getModalTitle() }}
                 </h3>
-                <button @click="showModal = false" class="w-8 h-8 rounded-full bg-white text-gray-500 hover:text-red-500 flex items-center justify-center shadow-sm">
+                <button @click="showModal = false" class="w-8 h-8 rounded-full bg-white text-gray-500 flex items-center justify-center shadow-sm">
                     <i class="fa-solid fa-times"></i>
                 </button>
             </div>
@@ -253,23 +266,19 @@
 
                 <div v-if="modalType === 'expense'" class="space-y-4">
                     <div class="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <div>
-                            <div class="text-blue-800 font-bold">小羊奶 ($70)</div>
-                        </div>
+                        <span class="text-blue-800 font-bold">小羊奶 ($70)</span>
                         <div class="flex items-center gap-3">
-                            <button @click="form.small = Math.max(0, form.small-1)" class="w-10 h-10 rounded-lg bg-white shadow text-blue-600 font-bold text-xl hover:bg-blue-100">-</button>
+                            <button @click="form.small = Math.max(0, form.small-1)" class="w-10 h-10 rounded-lg bg-white shadow text-blue-600 font-bold text-xl">-</button>
                             <div class="w-8 text-center font-bold text-xl font-num">{{ form.small }}</div>
-                            <button @click="form.small++" class="w-10 h-10 rounded-lg bg-blue-600 shadow text-white font-bold text-xl hover:bg-blue-700">+</button>
+                            <button @click="form.small++" class="w-10 h-10 rounded-lg bg-blue-600 shadow text-white font-bold text-xl">+</button>
                         </div>
                     </div>
                     <div class="flex items-center justify-between bg-orange-50 p-3 rounded-lg border border-orange-100">
-                        <div>
-                            <div class="text-orange-800 font-bold">大羊奶 ($130)</div>
-                        </div>
+                        <span class="text-orange-800 font-bold">大羊奶 ($130)</span>
                         <div class="flex items-center gap-3">
-                            <button @click="form.large = Math.max(0, form.large-1)" class="w-10 h-10 rounded-lg bg-white shadow text-orange-600 font-bold text-xl hover:bg-orange-100">-</button>
+                            <button @click="form.large = Math.max(0, form.large-1)" class="w-10 h-10 rounded-lg bg-white shadow text-orange-600 font-bold text-xl">-</button>
                             <div class="w-8 text-center font-bold text-xl font-num">{{ form.large }}</div>
-                            <button @click="form.large++" class="w-10 h-10 rounded-lg bg-orange-600 shadow text-white font-bold text-xl hover:bg-orange-700">+</button>
+                            <button @click="form.large++" class="w-10 h-10 rounded-lg bg-orange-600 shadow text-white font-bold text-xl">+</button>
                         </div>
                     </div>
                     <div class="flex justify-between items-center pt-2 border-t border-dashed">
@@ -280,23 +289,26 @@
 
                 <div v-if="modalType === 'deposit'">
                     <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">金額</label>
-                    <input type="number" v-model.number="form.amount" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-3xl font-num font-bold text-teal-600 outline-none focus:ring-2 focus:ring-teal-500" placeholder="0">
-                    <div class="flex gap-2 mt-3">
-                        <button @click="form.amount = 1000" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600">+1000</button>
-                        <button @click="form.amount = 2000" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600">+2000</button>
-                        <button @click="form.amount = 4000" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600">+4000</button>
-                    </div>
+                    <input type="number" v-model.number="form.amount" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-3xl font-num font-bold text-teal-600 outline-none placeholder-gray-300" placeholder="0">
+                </div>
+
+                <div v-if="modalType === 'exception'">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">調整金額 (正數增加餘額 / 負數減少)</label>
+                    <input type="number" v-model.number="form.amount" class="w-full mt-1 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-3xl font-num font-bold text-amber-700 outline-none" placeholder="例如: -3400">
+                    <p class="text-xs text-gray-400 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>負數代表扣款或修正多算的餘額</p>
                 </div>
 
                 <div>
-                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">備註</label>
-                    <input type="text" v-model="form.note" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500" placeholder="選填">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                        {{ modalType === 'exception' ? '調整原因 (必填)' : '備註' }}
+                    </label>
+                    <input type="text" v-model="form.note" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2" :class="modalType==='exception'?'focus:ring-amber-500':'focus:ring-purple-500'" placeholder="請輸入說明">
                 </div>
             </div>
 
             <div class="p-5 pt-0">
                 <button @click="submitTransaction" class="w-full py-3.5 rounded-xl font-bold text-white shadow-lg text-lg transition-transform active:scale-95"
-                    :class="modalType === 'expense' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-teal-600 hover:bg-teal-700'">
+                    :class="{'bg-purple-600': modalType==='expense', 'bg-teal-600': modalType==='deposit', 'bg-amber-500': modalType==='exception'}">
                     確認儲存
                 </button>
             </div>
@@ -307,7 +319,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { createApp, ref, computed, onMounted } from "https://unpkg.com/vue@3/dist/vue.esm-browser.js";
 
     const firebaseConfig = {
@@ -330,7 +342,7 @@
             const transactions = ref([]);
             const viewMode = ref('ledger');
             const showModal = ref(false);
-            const modalType = ref('expense');
+            const modalType = ref('expense'); // expense, deposit, exception
             const prices = ref({ small: 70, large: 130 }); 
 
             const form = ref({
@@ -341,76 +353,71 @@
                 note: ''
             });
 
-            // 經過清洗、合併與排序的完整歷史資料
-            // 邏輯保證 1/4 餘額為 2580
+            // 包含例外項目的完整初始化資料
             const initialData = [
-                // 3月 (初始)
+                // 3~9月 正常資料
                 {date: '2025-03-12', type: 'expense', small: 4, large: 0, amount: 260, note: '初始'},
                 {date: '2025-03-16', type: 'expense', small: 17, large: 0, amount: 1105, note: '3/21已付'},
                 {date: '2025-03-23', type: 'expense', small: 6, large: 0, amount: 390, note: ''},
                 {date: '2025-03-30', type: 'expense', small: 4, large: 1, amount: 395, note: ''},
-                // 4月
                 {date: '2025-04-12', type: 'expense', small: 10, large: 0, amount: 650, note: ''},
                 {date: '2025-04-21', type: 'expense', small: 5, large: 0, amount: 325, note: ''},
                 {date: '2025-04-30', type: 'deposit', small: 0, large: 0, amount: 3000, note: '轉帳'},
-                // 5月
                 {date: '2025-05-01', type: 'expense', small: 4, large: 0, amount: 260, note: ''},
                 {date: '2025-05-04', type: 'expense', small: 8, large: 0, amount: 520, note: ''},
                 {date: '2025-05-12', type: 'expense', small: 10, large: 0, amount: 650, note: ''},
                 {date: '2025-05-24', type: 'expense', small: 10, large: 0, amount: 650, note: ''},
-                // 6月
                 {date: '2025-06-01', type: 'expense', small: 11, large: 0, amount: 715, note: ''},
                 {date: '2025-06-08', type: 'expense', small: 7, large: 0, amount: 455, note: ''},
                 {date: '2025-06-08', type: 'deposit', small: 0, large: 0, amount: 4000, note: '儲值'},
+                // 例外 1: 手寫帳修正
+                {date: '2025-06-08', type: 'exception', small: 0, large: 0, amount: -360, note: '手寫帳修正誤差'},
                 {date: '2025-06-15', type: 'expense', small: 7, large: 0, amount: 455, note: ''},
                 {date: '2025-06-24', type: 'expense', small: 1, large: 0, amount: 65, note: ''},
                 {date: '2025-06-28', type: 'expense', small: 5, large: 0, amount: 325, note: ''},
-                // 7月
                 {date: '2025-07-06', type: 'expense', small: 4, large: 0, amount: 260, note: ''},
                 {date: '2025-07-20', type: 'expense', small: 4, large: 0, amount: 260, note: ''},
                 {date: '2025-07-29', type: 'expense', small: 4, large: 0, amount: 260, note: ''},
-                // 8月
                 {date: '2025-08-01', type: 'expense', small: 2, large: 0, amount: 130, note: ''},
                 {date: '2025-08-01', type: 'deposit', small: 0, large: 0, amount: 1290, note: '補8/1前餘額'},
+                // 例外 2: 8月誤差
+                {date: '2025-08-01', type: 'exception', small: 0, large: 0, amount: 100, note: '修正8月手寫帳誤差'},
                 {date: '2025-08-12', type: 'expense', small: 10, large: 0, amount: 650, note: ''},
                 {date: '2025-08-17', type: 'expense', small: 4, large: 0, amount: 280, note: '小漲為70'},
                 {date: '2025-08-21', type: 'expense', small: 2, large: 0, amount: 140, note: ''},
+                {date: '2025-08-21', type: 'exception', small: 0, large: 0, amount: -5, note: '8/21零頭修正'},
                 {date: '2025-08-28', type: 'expense', small: 3, large: 0, amount: 210, note: ''},
                 {date: '2025-08-28', type: 'deposit', small: 0, large: 0, amount: 1280, note: ''},
-                // 9月
                 {date: '2025-09-01', type: 'expense', small: 2, large: 0, amount: 140, note: ''},
                 {date: '2025-09-06', type: 'expense', small: 5, large: 0, amount: 350, note: ''},
                 {date: '2025-09-16', type: 'expense', small: 4, large: 0, amount: 280, note: ''},
                 {date: '2025-09-22', type: 'expense', small: 2, large: 0, amount: 140, note: ''},
-                // 9/30 特殊處理區塊
                 {date: '2025-09-30', type: 'expense', small: 6, large: 2, amount: 680, note: '大漲為130'},
-                {date: '2025-09-30', type: 'expense', small: 0, large: 0, amount: 3400, note: '食農教育特殊款', isSpecial: true},
+                // 9/30 特殊款 -> 現在改為 exception 類型
+                {date: '2025-09-30', type: 'exception', small: 0, large: 0, amount: -3400, note: '食農教育特殊帳款'},
                 {date: '2025-09-30', type: 'deposit', small: 0, large: 0, amount: 5000, note: '轉帳'},
-                // 10月
                 {date: '2025-10-03', type: 'expense', small: 4, large: 0, amount: 280, note: ''},
                 {date: '2025-10-12', type: 'expense', small: 6, large: 3, amount: 810, note: ''},
                 {date: '2025-10-19', type: 'expense', small: 7, large: 3, amount: 880, note: ''},
                 {date: '2025-10-19', type: 'deposit', small: 0, large: 0, amount: 3959, note: ''},
+                // 例外: 10月尾數捨去
+                {date: '2025-10-19', type: 'exception', small: 0, large: 0, amount: -9, note: '尾數捨去修正'},
                 {date: '2025-10-27', type: 'expense', small: 6, large: 4, amount: 940, note: ''},
-                // 11月
                 {date: '2025-11-03', type: 'expense', small: 10, large: 5, amount: 1350, note: ''},
                 {date: '2025-11-03', type: 'deposit', small: 0, large: 0, amount: 1200, note: ''},
                 {date: '2025-11-10', type: 'expense', small: 0, large: 4, amount: 520, note: ''},
                 {date: '2025-11-17', type: 'expense', small: 11, large: 3, amount: 1160, note: ''},
                 {date: '2025-11-17', type: 'deposit', small: 0, large: 0, amount: 4000, note: ''},
                 {date: '2025-11-24', type: 'expense', small: 4, large: 6, amount: 1060, note: ''},
-                // 12月
                 {date: '2025-12-01', type: 'expense', small: 4, large: 4, amount: 800, note: ''},
                 {date: '2025-12-06', type: 'expense', small: 13, large: 3, amount: 1300, note: ''},
                 {date: '2025-12-09', type: 'expense', small: 2, large: 0, amount: 140, note: ''},
                 {date: '2025-12-28', type: 'expense', small: 11, large: 4, amount: 1290, note: ''},
-                // 1月 (2026)
                 {date: '2026-01-03', type: 'expense', small: 12, large: 0, amount: 840, note: ''},
                 {date: '2026-01-03', type: 'deposit', small: 0, large: 0, amount: 4200, note: ''},
                 {date: '2026-01-04', type: 'expense', small: 6, large: 0, amount: 420, note: ''},
-                // 系統自動校正項 (確保餘額 = 2580)
-                // 經計算截至1/4歷史資料，若無此校正，數學餘額與手寫帳可能會有微小落差，這裡進行最後修正
-                {date: '2025-03-01', type: 'deposit', small: 0, large: 0, amount: 125, note: '期初餘額校正', isSystem: true}
+                // 期初校正
+                {date: '2025-03-01', type: 'exception', small: 0, large: 0, amount: 125, note: '期初餘額校正'},
             ];
 
             onMounted(() => {
@@ -423,29 +430,36 @@
 
             // 核心邏輯：計算流水帳餘額
             const sortedTransactions = computed(() => {
-                // 1. 複製並按日期由舊到新排序 (計算用)
                 let items = [...transactions.value].sort((a, b) => {
                     if (a.date === b.date) {
-                        // 同一天，Deposit 排後面 (先扣款再儲值)
-                        if (a.type !== b.type) return a.type === 'deposit' ? 1 : -1;
-                        // 特殊款項排最後
-                        if (a.isSpecial) return 1;
-                        if (b.isSpecial) return -1;
+                        if (a.type !== b.type) {
+                             if(a.type === 'deposit') return 1;
+                             if(a.type === 'exception') return 1;
+                             return -1;
+                        }
                     }
                     return new Date(a.date) - new Date(b.date);
                 });
 
-                // 2. 逐筆計算累計餘額
                 let running = 0;
                 items.forEach(t => {
-                    const amt = Number(t.amount);
-                    if (t.type === 'deposit') running += amt;
-                    else running -= amt;
+                    if (t.type === 'deposit') {
+                        running += Number(t.amount);
+                    } else if (t.type === 'exception') {
+                        // 例外項目: 正數加，負數減
+                        running += Number(t.amount);
+                    } else {
+                        // expense
+                        running -= Number(t.amount);
+                    }
                     t.runningBalance = running;
                 });
 
-                // 3. 反轉為 新到舊 (顯示用)
                 return items.reverse();
+            });
+
+            const exceptionTransactions = computed(() => {
+                return sortedTransactions.value.filter(t => t.type === 'exception');
             });
 
             const currentBalance = computed(() => {
@@ -453,22 +467,23 @@
                 return sortedTransactions.value[0].runningBalance;
             });
 
-            // 月報表統計
             const monthlyStats = computed(() => {
                 const stats = {};
                 transactions.value.forEach(t => {
-                    if (t.isSystem) return; // 忽略校正項
                     const d = new Date(t.date);
                     const key = `${d.getFullYear()}年${d.getMonth() + 1}月`;
-                    if (!stats[key]) stats[key] = { totalSmall: 0, totalLarge: 0, expense: 0, deposit: 0, net: 0 };
+                    if (!stats[key]) stats[key] = { totalSmall: 0, totalLarge: 0, expense: 0, deposit: 0, adjustment: 0, net: 0 };
                     
                     if (t.type === 'expense') {
                         stats[key].totalSmall += (t.small || 0);
                         stats[key].totalLarge += (t.large || 0);
                         stats[key].expense += Number(t.amount);
                         stats[key].net -= Number(t.amount);
-                    } else {
+                    } else if (t.type === 'deposit') {
                         stats[key].deposit += Number(t.amount);
+                        stats[key].net += Number(t.amount);
+                    } else if (t.type === 'exception') {
+                        stats[key].adjustment += Number(t.amount);
                         stats[key].net += Number(t.amount);
                     }
                 });
@@ -489,11 +504,29 @@
                 const d = new Date(dateStr);
                 return `${d.getMonth() + 1}/${d.getDate()}`;
             };
+            
+            const getAmountColor = (t) => {
+                if (t.type === 'expense') return 'text-neg';
+                if (t.type === 'deposit') return 'text-pos';
+                return t.amount >= 0 ? 'text-secondary' : 'text-neg';
+            };
+
+            const getSign = (t) => {
+                if (t.type === 'expense') return '-';
+                if (t.type === 'deposit') return '+';
+                return t.amount >= 0 ? '+' : '';
+            };
 
             const openModal = (type) => {
                 modalType.value = type;
                 form.value = { date: new Date().toISOString().split('T')[0], small: 0, large: 0, amount: '', note: '' };
                 showModal.value = true;
+            };
+            
+            const getModalTitle = () => {
+                if (modalType.value === 'expense') return '新增配送紀錄';
+                if (modalType.value === 'deposit') return '新增儲值/轉帳';
+                if (modalType.value === 'exception') return '新增例外調整';
             };
 
             const calculateExpense = () => (form.value.small * prices.value.small) + (form.value.large * prices.value.large);
@@ -501,6 +534,7 @@
             const submitTransaction = async () => {
                 if (modalType.value === 'deposit' && !form.value.amount) return alert("請輸入金額");
                 if (modalType.value === 'expense' && calculateExpense() === 0) return alert("請輸入數量");
+                if (modalType.value === 'exception' && !form.value.note) return alert("例外調整必須填寫原因");
 
                 const newTx = {
                     date: form.value.date,
@@ -520,7 +554,7 @@
             };
 
             const importInitialData = async () => {
-                if(!confirm(`即將導入 ${initialData.length} 筆歷史帳務，這會覆蓋現有資料嗎？(不會，是新增)`)) return;
+                if(!confirm(`即將導入 ${initialData.length} 筆歷史帳務與校正設定，這會新增資料(不覆蓋)，確定嗎？`)) return;
                 try {
                     const promises = initialData.map(data => addDoc(collection(db, COLLECTION_NAME), data));
                     await Promise.all(promises);
@@ -531,9 +565,9 @@
             };
 
             return {
-                dbReady, transactions, sortedTransactions, monthlyStats, currentBalance, dateRangeStr,
+                dbReady, transactions, sortedTransactions, exceptionTransactions, monthlyStats, currentBalance, dateRangeStr,
                 viewMode, showModal, modalType, form,
-                getWeekDay, formatNumber, formatDate, 
+                getWeekDay, formatNumber, formatDate, getAmountColor, getSign, getModalTitle,
                 openModal, calculateExpense, submitTransaction, importInitialData
             };
         }
